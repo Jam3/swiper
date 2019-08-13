@@ -7,7 +7,7 @@
  *
  * Released under the MIT License
  *
- * Released on: February 22, 2019
+ * Released on: August 13, 2019
  */
 
 (function (global, factory) {
@@ -846,7 +846,7 @@
   };
 
   Object.keys(Methods).forEach(function (methodName) {
-    $.fn[methodName] = Methods[methodName];
+    $.fn[methodName] = $.fn[methodName] || Methods[methodName];
   });
 
   var Utils = {
@@ -1784,7 +1784,9 @@
     if (previousRealIndex !== realIndex) {
       swiper.emit('realIndexChange');
     }
-    swiper.emit('slideChange');
+    if (swiper.initialized || swiper.runCallbacksOnInit) {
+      swiper.emit('slideChange');
+    }
   }
 
   function updateClickedSlide (e) {
@@ -2195,25 +2197,34 @@
     return swiper.slideTo(index, speed, runCallbacks, internal);
   }
 
-  function slideToClickedSlide () {
+  function slideToClickedSlide() {
     var swiper = this;
     var params = swiper.params;
     var $wrapperEl = swiper.$wrapperEl;
 
-    var slidesPerView = params.slidesPerView === 'auto' ? swiper.slidesPerViewDynamic() : params.slidesPerView;
+    var slidesPerView =
+      params.slidesPerView === "auto"
+        ? swiper.slidesPerViewDynamic()
+        : params.slidesPerView;
     var slideToIndex = swiper.clickedIndex;
     var realIndex;
     if (params.loop) {
       if (swiper.animating) { return; }
-      realIndex = parseInt($(swiper.clickedSlide).attr('data-swiper-slide-index'), 10);
+      realIndex = parseInt(
+        $(swiper.clickedSlide).attr("data-swiper-slide-index"),
+        10
+      );
       if (params.centeredSlides) {
         if (
-          (slideToIndex < swiper.loopedSlides - (slidesPerView / 2))
-          || (slideToIndex > (swiper.slides.length - swiper.loopedSlides) + (slidesPerView / 2))
+          slideToIndex < swiper.loopedSlides - slidesPerView / 2 ||
+          slideToIndex >
+            swiper.slides.length - swiper.loopedSlides + slidesPerView / 2
         ) {
           swiper.loopFix();
           slideToIndex = $wrapperEl
-            .children(("." + (params.slideClass) + "[data-swiper-slide-index=\"" + realIndex + "\"]:not(." + (params.slideDuplicateClass) + ")"))
+            .children(
+              ("." + (params.slideClass) + "[data-swiper-slide-index=\"" + realIndex + "\"]:not(." + (params.slideDuplicateClass) + ")")
+            )
             .eq(0)
             .index();
 
@@ -2223,10 +2234,15 @@
         } else {
           swiper.slideTo(slideToIndex);
         }
-      } else if (slideToIndex > swiper.slides.length - slidesPerView) {
+      } else if (
+        slideToIndex >= swiperLength - slidesPerView ||
+        slideToIndex <= 0
+      ) {
         swiper.loopFix();
         slideToIndex = $wrapperEl
-          .children(("." + (params.slideClass) + "[data-swiper-slide-index=\"" + realIndex + "\"]:not(." + (params.slideDuplicateClass) + ")"))
+          .children(
+            ("." + (params.slideClass) + "[data-swiper-slide-index=\"" + realIndex + "\"]:not(." + (params.slideDuplicateClass) + ")")
+          )
           .eq(0)
           .index();
 
@@ -3199,6 +3215,7 @@
       if (params.autoHeight) {
         swiper.updateAutoHeight();
       }
+
     } else {
       swiper.updateSlidesClasses();
       if ((params.slidesPerView === 'auto' || params.slidesPerView > 1) && swiper.isEnd && !swiper.params.centeredSlides) {
@@ -3206,6 +3223,9 @@
       } else {
         swiper.slideTo(swiper.activeIndex, 0, false, true);
       }
+    }
+    if (swiper.autoplay && swiper.autoplay.running && swiper.autoplay.paused) {
+      swiper.autoplay.run();
     }
     // Return locks after resize
     swiper.allowSlidePrev = allowSlidePrev;
@@ -3987,23 +4007,12 @@
         return swiper;
       }
 
-      if (currentDirection === 'vertical') {
-        swiper.$el
-          .removeClass(((swiper.params.containerModifierClass) + "vertical wp8-vertical"))
-          .addClass(("" + (swiper.params.containerModifierClass) + newDirection));
+      swiper.$el
+        .removeClass(("" + (swiper.params.containerModifierClass) + currentDirection + " wp8-" + currentDirection))
+        .addClass(("" + (swiper.params.containerModifierClass) + newDirection));
 
-        if ((Browser.isIE || Browser.isEdge) && (Support.pointerEvents || Support.prefixedPointerEvents)) {
-          swiper.$el.addClass(((swiper.params.containerModifierClass) + "wp8-" + newDirection));
-        }
-      }
-      if (currentDirection === 'horizontal') {
-        swiper.$el
-          .removeClass(((swiper.params.containerModifierClass) + "horizontal wp8-horizontal"))
-          .addClass(("" + (swiper.params.containerModifierClass) + newDirection));
-
-        if ((Browser.isIE || Browser.isEdge) && (Support.pointerEvents || Support.prefixedPointerEvents)) {
-          swiper.$el.addClass(((swiper.params.containerModifierClass) + "wp8-" + newDirection));
-        }
+      if ((Browser.isIE || Browser.isEdge) && (Support.pointerEvents || Support.prefixedPointerEvents)) {
+        swiper.$el.addClass(((swiper.params.containerModifierClass) + "wp8-" + newDirection));
       }
 
       swiper.params.direction = newDirection;
@@ -4569,10 +4578,10 @@
       if (e.originalEvent) { e = e.originalEvent; } // jquery fix
       var kc = e.keyCode || e.charCode;
       // Directions locks
-      if (!swiper.allowSlideNext && ((swiper.isHorizontal() && kc === 39) || (swiper.isVertical() && kc === 40))) {
+      if (!swiper.allowSlideNext && ((swiper.isHorizontal() && kc === 39) || (swiper.isVertical() && kc === 40) || kc === 34)) {
         return false;
       }
-      if (!swiper.allowSlidePrev && ((swiper.isHorizontal() && kc === 37) || (swiper.isVertical() && kc === 38))) {
+      if (!swiper.allowSlidePrev && ((swiper.isHorizontal() && kc === 37) || (swiper.isVertical() && kc === 38) || kc === 33)) {
         return false;
       }
       if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) {
@@ -4581,7 +4590,7 @@
       if (doc.activeElement && doc.activeElement.nodeName && (doc.activeElement.nodeName.toLowerCase() === 'input' || doc.activeElement.nodeName.toLowerCase() === 'textarea')) {
         return undefined;
       }
-      if (swiper.params.keyboard.onlyInViewport && (kc === 37 || kc === 39 || kc === 38 || kc === 40)) {
+      if (swiper.params.keyboard.onlyInViewport && (kc === 33 || kc === 34 || kc === 37 || kc === 39 || kc === 38 || kc === 40)) {
         var inView = false;
         // Check that swiper should be inside of visible area of window
         if (swiper.$el.parents(("." + (swiper.params.slideClass))).length > 0 && swiper.$el.parents(("." + (swiper.params.slideActiveClass))).length === 0) {
@@ -4608,19 +4617,19 @@
         if (!inView) { return undefined; }
       }
       if (swiper.isHorizontal()) {
-        if (kc === 37 || kc === 39) {
+        if (kc === 33 || kc === 34 || kc === 37 || kc === 39) {
           if (e.preventDefault) { e.preventDefault(); }
           else { e.returnValue = false; }
         }
-        if ((kc === 39 && !rtl) || (kc === 37 && rtl)) { swiper.slideNext(); }
-        if ((kc === 37 && !rtl) || (kc === 39 && rtl)) { swiper.slidePrev(); }
+        if (((kc === 34 || kc === 39) && !rtl) || ((kc === 33 || kc === 37) && rtl)) { swiper.slideNext(); }
+        if (((kc === 33 || kc === 37) && !rtl) || ((kc === 34 || kc === 39) && rtl)) { swiper.slidePrev(); }
       } else {
-        if (kc === 38 || kc === 40) {
+        if (kc === 33 || kc === 34 || kc === 38 || kc === 40) {
           if (e.preventDefault) { e.preventDefault(); }
           else { e.returnValue = false; }
         }
-        if (kc === 40) { swiper.slideNext(); }
-        if (kc === 38) { swiper.slidePrev(); }
+        if (kc === 34 || kc === 40) { swiper.slideNext(); }
+        if (kc === 33 || kc === 38) { swiper.slidePrev(); }
       }
       swiper.emit('keyPress', kc);
       return undefined;
@@ -7245,6 +7254,7 @@
       if ($activeSlideEl.attr('data-swiper-autoplay')) {
         delay = $activeSlideEl.attr('data-swiper-autoplay') || swiper.params.autoplay.delay;
       }
+      clearTimeout(swiper.autoplay.timeout);
       swiper.autoplay.timeout = Utils.nextTick(function () {
         if (swiper.params.autoplay.reverseDirection) {
           if (swiper.params.loop) {
@@ -7983,7 +7993,7 @@
         } else {
           newThumbsIndex = swiper.realIndex;
         }
-        if (thumbsSwiper.visibleSlidesIndexes.indexOf(newThumbsIndex) < 0) {
+        if (thumbsSwiper.visibleSlidesIndexes && thumbsSwiper.visibleSlidesIndexes.indexOf(newThumbsIndex) < 0) {
           if (thumbsSwiper.params.centeredSlides) {
             if (newThumbsIndex > currentThumbsIndex) {
               newThumbsIndex = newThumbsIndex - Math.floor(slidesPerView / 2) + 1;
