@@ -1371,7 +1371,7 @@ function slideToClickedSlide() {
         swiper.slideTo(slideToIndex);
       }
     } else if (
-      slideToIndex >= swiperLength - slidesPerView ||
+      slideToIndex >= swiper.slides.length - slidesPerView ||
       slideToIndex <= 0
     ) {
       swiper.loopFix();
